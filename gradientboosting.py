@@ -10,17 +10,15 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import classification_report
 
-# ---------------------------
-# Config
-# ---------------------------
+# Config and importation of the training dataset
+
 FILE_PATH = "CDER BLA.xlsx"
 SHEET_NAME = "Complete Life Cycle"
 RANDOM_STATE = 42
 TEST_SIZE = 0.20  # as per your request
 
-# ---------------------------
-# Helpers
-# ---------------------------
+
+# Formula to cleam
 def find_year_cols(columns):
     """Finds and sorts columns that are valid years."""
     years = [str(c) for c in columns if re.fullmatch(r"\d{4}", str(c))]
@@ -46,9 +44,9 @@ def sales_to_bucket(s):
     else:
         return "below_100"
 
-# ---------------------------
+
 # Data Loading
-# ---------------------------
+
 print(f"Loading data from {FILE_PATH}...")
 try:
     df_full = pd.read_excel(FILE_PATH, sheet_name=SHEET_NAME)
@@ -62,9 +60,8 @@ if "Modaality" in df_full.columns:
 year_cols = find_year_cols(df_full.columns)
 df_full = coerce_years_to_numeric(df_full, year_cols)
 
-# ---------------------------
+
 # Target: Simple mean of the first 13 years after approval
-# ---------------------------
 # Create ApprovalYear first (used both for target and features)
 df_full["ApprovalYear"] = pd.to_datetime(df_full["Approval Date"], errors="coerce").dt.year
 
@@ -84,9 +81,9 @@ df_full["Avg13yrSales"] = df_full.apply(mean_first_13_years, axis=1)
 df_full = df_full.dropna(subset=["Avg13yrSales"])
 df_full = df_full[df_full["Avg13yrSales"] > 0].copy()
 
-# ---------------------------
+
 # Main Evaluation Loop
-# ---------------------------
+
 results = []
 years_to_review_list = range(2, 11)
 
@@ -140,7 +137,7 @@ for years in years_to_review_list:
         )),
     ])
 
-    # Train
+    # Train the gradient boosting regressor
     model.fit(X_train, y_train)
 
     # --- Performance Calculation ---
@@ -173,9 +170,8 @@ for years in years_to_review_list:
         "test_f1_medium": report_test.get('medium', {}).get('f1-score', 0),
     })
 
-# ---------------------------
-# Print Final Markdown Tables
-# ---------------------------
+
+# export of the table for the thesis
 print("\n\n" + "="*130)
 print("                                   Model Performance vs. Years of Review (Overall Metrics)")
 print("="*130)
